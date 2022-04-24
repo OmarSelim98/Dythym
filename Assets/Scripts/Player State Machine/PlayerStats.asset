@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bec83b4e627fee74fafe0104ed9c7d1a, type: 3}
+  m_Name: PlayerStats
+  m_EditorClassIdentifier: 
+  movementSpeed: 1
+  weapons:
+  - {fileID: 11400000, guid: 0b28f7da84d7e8c43b56029fe043b371, type: 2}
+  currentWeapon: {fileID: 11400000, guid: 0b28f7da84d7e8c43b56029fe043b371, type: 2}
+  initialJumpSpeed: 31.84
+  distanceToGround: 0.03
+  maxJumpTime: 0.5
+  maxJumpHeight: 1.99
+  rotationFactor: 0.332
+  fallMultiplier: 2.05
+  dashTime: 0.25
+  dashDistance: 3
+  dashSpeed: 12
+  dashAudioList:
+  - {fileID: 11400000, guid: e194f6dd2ddff4d42ac5c6f5152d26aa, type: 2}
+  - {fileID: 11400000, guid: c33321d029f9d5e4384fe12498bfa688, type: 2}
+  attackAudioList:
+  - {fileID: 11400000, guid: c5e9d4eb55596f247a484fb1713957c5, type: 2}
+  - {fileID: 11400000, guid: 1ded06a27b123284d93f8e6218537444, type: 2}
+  audioStats: {fileID: 11400000, guid: fe5d54b343a31a241af38e77d0081121, type: 2}

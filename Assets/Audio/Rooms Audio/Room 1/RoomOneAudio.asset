@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0df18f36b6941e45a5b4e959c24be79, type: 3}
+  m_Name: RoomOneAudio
+  m_EditorClassIdentifier: 
+  Initial: {fileID: 11400000, guid: ad163004af8288d49b4dd0eaacc2f7f1, type: 2}
+  Gameplay: {fileID: 0}
+  Final: {fileID: 0}
+  BPM: 110
+  PlayableBeats:
+  - 1.5
+  - 3
+  LengthInBeats: 4
+  ErrorMargin: 0.25
+  dashList:
+  - oneShot: {fileID: 11400000, guid: e194f6dd2ddff4d42ac5c6f5152d26aa, type: 2}
+    forBeat: 1.5
+  - oneShot: {fileID: 11400000, guid: c33321d029f9d5e4384fe12498bfa688, type: 2}
+    forBeat: 3
+  attackList:
+  - oneShot: {fileID: 11400000, guid: c5e9d4eb55596f247a484fb1713957c5, type: 2}
+    forBeat: 1.5
+  - oneShot: {fileID: 11400000, guid: 1ded06a27b123284d93f8e6218537444, type: 2}
+    forBeat: 3
