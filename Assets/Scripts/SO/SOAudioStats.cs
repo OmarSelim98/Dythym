@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 [CreateAssetMenu(menuName = "SO/Audio Manager Stats File")]
 public class SOAudioStats : ScriptableObject
@@ -67,7 +68,7 @@ public class SOAudioStats : ScriptableObject
     {
         if (songPositionInBeats >= (completedLoops + 1) * beatsPerLoop)
             completedLoops++;
-        loopPositionInBeats = songPositionInBeats - completedLoops * beatsPerLoop;
+        loopPositionInBeats = (float) Math.Round((double) (songPositionInBeats - completedLoops * beatsPerLoop) , 2);
     }
     public void UpdateAnaglogLoopPosition()
     {
@@ -79,7 +80,7 @@ public class SOAudioStats : ScriptableObject
         foreach(float beat in roomAudio.PlayableBeats)
         {
             float max = beat + errorMarginInBeats;
-            float min = beat!=0 ? beat - errorMarginInBeats : roomAudio.LengthInBeats - errorMarginInBeats;
+            float min = beat - errorMarginInBeats;
 
             if ( (loopPositionInBeats-min) * (max-loopPositionInBeats)  >= 0) {
                 canPerformAction = true;
@@ -98,6 +99,11 @@ public class SOAudioStats : ScriptableObject
     {
         return beats * 60 / songBpm;
     }
+
+    public float AbsoluteAnimationSpeedByFrame(float speed) // Gets speed running on x frames to run on 0.5 frames
+    {
+        return speed / 0.5f;
+    }
     public float RelativeAnimationSpeed(float mainSpeed)
     {
         return mainSpeed * songBpm / 120;
@@ -105,5 +111,17 @@ public class SOAudioStats : ScriptableObject
     public bool onBeat() {
         //Debug.Log(Mathf.Ceil(loopPositionInBeats) - loopPositionInBeats);
         return Mathf.Ceil(loopPositionInBeats) - loopPositionInBeats <= 0.05f;
+    }
+    public bool beforePlayableBeatBy(float indicatingBeat) {
+        foreach (float playableBeat in roomAudio.PlayableBeats)
+        {
+            float c = playableBeat - ((loopPositionInBeats + indicatingBeat)%beatsPerLoop);
+            if (c >= -0.05 && c <= 0.05)
+            {
+                return true;
+            }
+        }   
+
+        return false;
     }
 }

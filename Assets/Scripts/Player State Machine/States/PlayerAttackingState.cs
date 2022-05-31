@@ -4,80 +4,66 @@ using UnityEngine;
 using DG.Tweening;
 public class PlayerAttackingState : PlayerAbstractState
 {
+    // when the player tap the attack button, he enters the attack state for the first time
+    // hit counter will be = 0
+    // the state will exit to idle if
+    // the animation of the attack has finished
+    // it will repeat if
+    // the player clicks the attack button again
     public PlayerAttackingState(PlayerStateMachine ctx, PlayerStateFactory factory) : base(ctx, factory) { }
-    bool isFinished = false;
+
+    Coroutine _endAttackAnimationCoroutine;
     public override void EnterState()
     {
-        isFinished = false;
-        _ctx.PlayerInput.Controller.Disable();
-        //_ctx.PlayerAudio.PlayOneShot(_ctx.AttacksAudio[_ctx.HitCounter % _ctx.AttacksAudio.Count].file);
-        if (_ctx.HitCounter > 2)
-        {
-            _ctx.HitCounter = 0;
-        }
-        _ctx.PlayerAnimator.speed = _ctx.AudioStats.RelativeAnimationSpeed(1.0f);
-        _ctx.PlayerAnimator.SetInteger(_ctx.H_hitCount, _ctx.HitCounter);
-        _ctx.PlayerAnimator.SetTrigger(_ctx.H_attack);
-        DOTween.To(x => _ctx.KatanaDissolve[0].SetFloat("_dissolve", x), 1, 0, 0.4f);
-        DOTween.To(x => _ctx.KatanaDissolve[1].SetFloat("_dissolve", x), 1, 0, 0.4f);
-        DOTween.To(x => _ctx.KatanaDissolve[2].SetFloat("_dissolve", x), 1, 0, 0.4f);
-        DOTween.To(x => _ctx.KatanaDissolve[3].SetFloat("_dissolve", x), 1, 0, 0.4f);
-        _ctx.AnimationSlash[_ctx.HitCounter].SetActive(true);
-        _ctx.StartTimedFunction(0.5f);
-        //_ctx.KatanaTrail.SetActive(true);
+        // clamp the hit counter
+        _ctx.HitCounter = Mathf.Clamp(_ctx.HitCounter, 0, 2);
+        Debug.Log("Hits = " + _ctx.HitCounter);
+        _ctx.PlayerAnimator.SetTrigger(_ctx.H_attack); // trigger the attack
+        _ctx.PlayerAnimator.SetInteger(_ctx.H_hitCount, _ctx.HitCounter); // add the hit 
+        //start the animtion and set an end to it
+        _ctx.IsAttackingPressed = false;
+        _endAttackAnimationCoroutine = _ctx.StartCoroutine(EndAttackAnimation());
     }
     public override void UpdateState()
     {
-        Debug.Log("In Attack hash " + _ctx.PlayerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash);
-
-        if (_ctx.TimedFunctionFinished)
-        {
-            isFinished = true;
-            _ctx.TimedFunctionFinished = false;
-            //Debug.Log(_ctx.KatanaDissolve[0].GetFloat("_dissolve"));
-        }
         CheckSwitchStates();
     }
     public override void ExitState()
     {
-        _ctx.PlayerAnimator.speed = 1;
-        _ctx.IsAttackingPressed = false;
-        _ctx.AnimationSlash[_ctx.HitCounter].SetActive(false);
         _ctx.HitCounter++;
-        
-        _ctx.PlayerInput.Controller.Enable();
-
+        if(_ctx.HitCounter > 2)
+        {
+            _ctx.HitCounter = 0;
+        }
     }
     public override void CheckSwitchStates()
     {
-        //if ((_ctx.H_attackAnimationList.Contains(_ctx.PlayerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash)
-        //|| _ctx.H_attackAnimationList.Contains(_ctx.PlayerAnimator.GetNextAnimatorStateInfo(0).shortNameHash))
-        //|| _ctx.PlayerAnimator.IsInTransition(0))
-        //{
-
-        //}
-        if(isFinished)
-        {
-            DOTween.To(x => _ctx.KatanaDissolve[0].SetFloat("_dissolve", x), 0, 1, 0.5f);
-            DOTween.To(x => _ctx.KatanaDissolve[1].SetFloat("_dissolve", x), 0, 1, 0.5f);
-            DOTween.To(x => _ctx.KatanaDissolve[2].SetFloat("_dissolve", x), 0, 1, 0.5f);
-            DOTween.To(x => _ctx.KatanaDissolve[3].SetFloat("_dissolve", x), 0, 1, 0.5f);
-            SwitchState(_factory.Idle());
-            //_ctx.PlayerInput.Controller.Enable();
-            // if (_ctx.IsMovementPressed)
-            // {
-            //     SwitchState(_factory.Moving());
-            // }
-            // else
-            // {
-            //     SwitchState(_factory.Idle());
-            // }
-        }
+        /**
+            if the animation has finished exit the state to :
+                idle : if player hasn't clicked the attack button (again) during the attack, and the animation has finished.
+                attack : if the player clicks the attack button again during an attack.
+         */
     }
 
     public override void InitializeSubState() { }
     public override string getName()
     {
         return "Attacking";
+    }
+    IEnumerator EndAttackAnimation()
+    {
+        yield return new WaitForSeconds(0.6f);
+        if (_ctx.IsAttackingPressed)
+        {
+            _ctx.PlayerAnimator.SetBool("canCombo", true);
+            Debug.Log("Attacking Again");
+            SwitchState(_factory.Attacking());
+        }
+        else
+        {
+            _ctx.PlayerAnimator.SetBool("canCombo", false);
+            Debug.Log("Exiting combo bye");
+            SwitchState(_factory.Idle());
+        }
     }
 }

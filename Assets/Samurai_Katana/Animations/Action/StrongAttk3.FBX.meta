@@ -536,8 +536,8 @@ ModelImporter:
       name: StrongAttk3
       takeName: Take 001
       internalID: 0
-      firstFrame: 86
-      lastFrame: 116
+      firstFrame: 90
+      lastFrame: 130
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

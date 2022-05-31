@@ -21,16 +21,24 @@ public class PlayerIdleState : PlayerAbstractState
     public override void ExitState() { }
     public override void CheckSwitchStates()
     {
-        if (_ctx.IsMovementPressed)
+        if (!_ctx.IsBeingDamaged)
         {
-            SwitchState(_factory.Moving());
+            if (_ctx.IsMovementPressed)
+            {
+                SwitchState(_factory.Moving());
+            }
+            else if (_ctx.IsAttackingPressed && !_ctx.PlayerAnimator.IsInTransition(0))
+            {
+                SwitchState(_factory.Attacking());
+            }
+            else if (_ctx.IsDashPressed)
+            {
+                SwitchState(_factory.Dashing());
+            }
         }
-        else if (_ctx.IsAttackingPressed && !_ctx.PlayerAnimator.IsInTransition(0))
+        else
         {
-            SwitchState(_factory.Attacking());
-        }
-        else if (_ctx.IsDashPressed){
-            SwitchState(_factory.Dashing());
+            SwitchState(_factory.Damaged());
         }
     }
     public override void InitializeSubState() { }

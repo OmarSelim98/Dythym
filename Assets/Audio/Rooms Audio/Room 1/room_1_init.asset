@@ -13,5 +13,3 @@ MonoBehaviour:
   m_Name: room_1_init
   m_EditorClassIdentifier: 
   file: {fileID: 8300000, guid: b289cbc464cd99646947ec72623a29e8, type: 3}
-  BPM: 66
-  LengthInBeats: 4

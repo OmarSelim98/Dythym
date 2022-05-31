@@ -3,14 +3,27 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.VFX;
 
 public class EnemyScript : MonoBehaviour
 {
+    //[SerializeField] SOGameEvent hitPlayerEvent;
     [SerializeField] SOAudioStats audioStats;
+    [SerializeField] public GameObject weaponRef;
+    [SerializeField] private float attackLength;
+    LinkedList<BufferCollider> collidersList = new LinkedList<BufferCollider>();
+    [SerializeField] bool debugTrail = false;
+    BoxCollider weaponCollider;
     NavMeshAgent agent;
+    [SerializeField]
     GameObject player;
+    [SerializeField]
+    GameObject hitVfxPrefab;
+    GameObject hitVfxInstance = null;
     Animator animator;
     Transform transform;
+    [SerializeField] LayerMask hitLayers;
+    Damageable combatStats;
     bool canAttack = true;
     bool inState = false;
     int isMovingHash = Animator.StringToHash("isMoving"); // moving hash
@@ -22,6 +35,9 @@ public class EnemyScript : MonoBehaviour
     int attackHash = Animator.StringToHash("Attack");
 
     Vector3 prevPlayerPosition;
+    private int maxCollidersCount = 10;
+
+    public GameObject Player { get => player; set => player = value; }
 
     // Start is called before the first frame update
     void Start()
@@ -30,33 +46,98 @@ public class EnemyScript : MonoBehaviour
         EnemyManager.instance.onEnenmyEndAttack += canAttackHandler;
         animator = GetComponent<Animator>();
         agent = GetComponent<NavMeshAgent>();
-        player = GameObject.Find("Player");
+        
         transform = GetComponent<Transform>();
+        weaponCollider = (BoxCollider) weaponRef.GetComponent<Collider>();
+        combatStats = GetComponent<Damageable>();
+
+        attackLength = audioStats.BeatsToSeconds(0.25f);
     }
 
+   
     // Update is called once per frame
     void Update()
     {
         if (player != null)
         {
-            lookAtPlayer();
-            if(distanceToPlayer() >= 1.5f)
+            if (!inState)
             {
-                followPlayerOnBeat();
+                lookAtPlayer();
+                if (distanceToPlayer() >= 1.5f)
+                {
+                    followPlayerOnBeat();
+                }
+                else
+                {
+                    // turn off agent control
+                    //agent.destination = transform.position;
+                    agent.isStopped = true;
+                    animator.SetBool(isLandingHash, false);
+                    animator.SetBool(isMovingHash, false);
+                    // choose between a right or left side step or an attack if nobody is attacking.
+                    AttackOrRotate();
+                }
             }
-            else
+            if (debugTrail)
             {
-                // turn off agent control
-                //agent.destination = transform.position;
-                agent.isStopped = true;
-                animator.SetBool(isLandingHash, false);
-                animator.SetBool(isMovingHash, false);
-                // choose between a right or left side step or an attack if nobody is attacking.
-                AttackOrRotate();
+                checkTrail();
             }
+            //DestroyVfxIfAlive();
         }
     }
-    
+
+    IEnumerator DestroyVfx()
+    {
+        yield return new WaitForSeconds(audioStats.BeatsToSeconds(1.0f));
+        Destroy(hitVfxInstance);
+        hitVfxInstance = null;
+    }
+    private void checkTrail()
+    {
+        // save left hand collider position
+        BufferCollider b = new BufferCollider();
+        b.size = weaponCollider.size;
+        b.position = weaponCollider.transform.position + weaponCollider.transform.TransformDirection(weaponCollider.center);
+        b.rotation = weaponCollider.transform.rotation;
+
+        collidersList.AddFirst(b);
+
+        if(collidersList.Count > maxCollidersCount)
+        {
+            collidersList.RemoveLast();
+        }
+
+        Collider[] hits = Physics.OverlapBox(b.position, b.size / 2, b.rotation, hitLayers, QueryTriggerInteraction.Ignore);
+
+        foreach(Collider hit in hits)
+        {
+            if (hit.gameObject.activeSelf)
+            {
+                Damageable damageable = hit.GetComponent<Damageable>();
+                if (damageable != null)
+                {
+                    damageable.ApplyDamage(this.combatStats.Damage, this.gameObject);
+                    Transform hitTransform = hit.transform;
+                    hitTransform.position = new Vector3(hitTransform.position.x, 0.5f, hitTransform.position.z);
+                    hitVfxInstance = Instantiate(hitVfxPrefab, weaponCollider.transform.position, Quaternion.identity);
+                    hitVfxInstance.GetComponent<VisualEffect>().Play();
+                    StartCoroutine(DestroyVfx());
+                }
+            }
+            break;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+        foreach (BufferCollider b in collidersList)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.matrix = Matrix4x4.TRS(b.position, b.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, b.size);
+        }
+    }
     void lookAtPlayer()
     {
         //if (!audioStats.canPerformAction)
@@ -92,12 +173,7 @@ public class EnemyScript : MonoBehaviour
             switch (choice)
                 {
                     case 0: // Take Steps
-                        inState = true;
-                        prevPlayerPosition = player.transform.position;
-                        EnemyManager.instance.enemyAttack(this.gameObject.GetInstanceID());
-                        animator.SetTrigger(attackHash);
-                        StartCoroutine(startAttackAnimation());
-                        StartCoroutine(endAttack());
+                        startAttack();
                     break;
                     default: // attack
                              //Debug.Log(" I am "+ this.name + " my closest enemy : " +);
@@ -191,23 +267,43 @@ public class EnemyScript : MonoBehaviour
         animator.SetBool(scndHash, true);
         StartCoroutine(endStep(scndHash, scndTime));
     }
+    // ATTACK
+    void startAttack()
+    {
+        inState = true;
+        prevPlayerPosition = player.transform.position;
+        EnemyManager.instance.enemyAttack(this.gameObject.GetInstanceID());
+        animator.SetTrigger(attackHash);
+        StartCoroutine(endAttack());
+    }
+    public void onAttackAnimationStart()
+    {
+        DOTween.To(x => transform.position = new Vector3(x, transform.position.y, transform.position.z), transform.position.x, prevPlayerPosition.x, attackLength);
+        DOTween.To(x => transform.position = new Vector3(transform.position.x, transform.position.y, x), transform.position.z, prevPlayerPosition.z, attackLength);
+        debugTrail = true;
+    }
+    public void onAttackAnimationEnd()
+    {
+        debugTrail = false;
+    }
     IEnumerator endAttack()
     {
-        yield return new WaitForSeconds(audioStats.BeatsToSeconds(1f));
+        yield return new WaitForSeconds(0.25f);
         //tell others that you are ended the attack
         EnemyManager.instance.enemyEndAttack();
         //and that you are no langer the attacker
         inState = false;
-        animator.SetBool(backStepHash, true);
-        inState = true;
-        StartCoroutine(endStep(backStepHash, 0.5f));
+        //animator.SetBool(backStepHash, true);
+        //inState = true;
+        //StartCoroutine(endStep(backStepHash, 0.5f));
     }
-    IEnumerator startAttackAnimation()
-    {
-        yield return new WaitForSeconds(audioStats.BeatsToSeconds(0.4f));
-        DOTween.To(x => transform.position = new Vector3(x, transform.position.y, transform.position.z), transform.position.x, prevPlayerPosition.x, audioStats.BeatsToSeconds(0.25f));
-        DOTween.To(x => transform.position = new Vector3(transform.position.x, transform.position.y, x), transform.position.z, prevPlayerPosition.z, audioStats.BeatsToSeconds(0.25f));
-    }
+    // ATTACK END
+
+    //IEnumerator startAttackAnimation()
+    //{
+    //    yield return new WaitForSeconds(0.25f);
+        
+    //}
     void followPlayerOnBeat()
     {
         if (!inState)
@@ -273,7 +369,6 @@ public class EnemyScript : MonoBehaviour
 
     void stopAttackingHandler()
     {
-        Debug.Log("Me : " + this.gameObject.GetInstanceID() + " , Him : " + EnemyManager.instance.AttackerID);
         if (!(this.gameObject.GetInstanceID() == EnemyManager.instance.AttackerID))
         {
             canAttack = false;
@@ -310,5 +405,10 @@ public class EnemyScript : MonoBehaviour
             1 right
             0 forward or backward
      */
-    
+    struct BufferCollider
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+        public Vector3 size;
+    }
 }

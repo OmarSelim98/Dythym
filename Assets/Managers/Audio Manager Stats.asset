@@ -13,14 +13,15 @@ MonoBehaviour:
   m_Name: Audio Manager Stats
   m_EditorClassIdentifier: 
   roomAudio: {fileID: 11400000, guid: 8aa5b7edc53aa6745b3becbd3094117b, type: 2}
-  canPerformAction: 1
+  canPerformAction: 0
   songBpm: 110
-  secPerBeat: 0.54545456
-  songPosition: 2.7519531
-  songPositionInBeats: 5.045247
-  dspSongTime: 4118.805
-  beatsPerLoop: 8
-  completedLoops: 0
-  loopPositionInBeats: 5.045247
-  loopPositionInAnalog: 0.6306559
+  secPerBeat: 1.2
+  songPosition: 7.253418
+  songPositionInBeats: 6.0445147
+  dspSongTime: 4386.8374
+  beatsPerLoop: 4
+  completedLoops: 1
+  loopPositionInBeats: 2.04
+  loopPositionInAnalog: 0.51
   errorMarginInBeats: 0.25
+  currentPlayableBeat: -1

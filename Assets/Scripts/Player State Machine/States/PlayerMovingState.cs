@@ -7,6 +7,8 @@ public class PlayerMovingState : PlayerAbstractState
     public override void EnterState()
     {
         _ctx.PlayerAnimator.SetBool(_ctx.IsWalkingHash, true);
+        float initialSpeed = _ctx.AudioStats.AbsoluteAnimationSpeedByFrame(0.7f);
+        _ctx.PlayerAnimator.speed = _ctx.AudioStats.RelativeAnimationSpeed(initialSpeed);
 
     }
     public override void UpdateState()
@@ -20,21 +22,29 @@ public class PlayerMovingState : PlayerAbstractState
     {
         _ctx.PlayerMovementX = 0;
         _ctx.PlayerMovementZ = 0;
+        _ctx.PlayerAnimator.speed = 1.0f;
     }
     public override void CheckSwitchStates()
     {
-        if (_ctx.IsAttackingPressed && !_ctx.PlayerAnimator.IsInTransition(0))
+        if (!_ctx.IsBeingDamaged)
         {
-            SwitchState(_factory.Attacking());
-        }
-        else if (_ctx.IsDashPressed)
-        {
-            SwitchState(_factory.Dashing());
+            if (_ctx.IsAttackingPressed && !_ctx.PlayerAnimator.IsInTransition(0))
+            {
+                SwitchState(_factory.Attacking());
+            }
+            else if (_ctx.IsDashPressed)
+            {
+                SwitchState(_factory.Dashing());
 
+            }
+            else if (!_ctx.IsMovementPressed)
+            {
+                SwitchState(_factory.Idle());
+            }
         }
-        else if (!_ctx.IsMovementPressed)
+        else
         {
-            SwitchState(_factory.Idle());
+            SwitchState(_factory.Damaged());
         }
     }
     public override void InitializeSubState() { }

@@ -31,4 +31,9 @@ public class PlayerStateFactory
     {
         return new PlayerGroundedState(_context, this);
     }
+
+    public PlayerAbstractState Damaged()
+    {
+        return new PlayerDamagedState(_context, this);
+    }
 }

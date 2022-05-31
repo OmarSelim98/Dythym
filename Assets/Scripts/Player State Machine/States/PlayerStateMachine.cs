@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI; //DEBUG
 using UnityEngine.Audio; //DEBUG
-
+using DG.Tweening;
 
 public class PlayerStateMachine : MonoBehaviour
 {
@@ -16,17 +16,22 @@ public class PlayerStateMachine : MonoBehaviour
     Animator playerAnimator; // reference to the animator.
     [SerializeField] GameObject dashVolume;
     [SerializeField] Vector3 playerMovement; // player current movement, applied to the Move() function in the character controller
-
+    [SerializeField] float _damageDuration = 0.25f;
     PlayerAbstractState _currentState;
     PlayerStateFactory _states;
+    PlayerStateMachine instance;
 
     [SerializeField] GameObject katanaSlash;
     // Animations Hashes
     int isWalkingHash = Animator.StringToHash("IsWalking"); // walking hash
     int isJumpingHash = Animator.StringToHash("IsJumping"); // jumping hash
     int isDashingHash = Animator.StringToHash("IsDashing"); // dashing hash
+    int isDamagedHash = Animator.StringToHash("IsDamaged"); // damaged hash
+    int katanaComboHash = Animator.StringToHash("katanaCombo"); // damaged hash
     int h_attack = Animator.StringToHash("attack");
     int h_hitCount = Animator.StringToHash("hitCount");
+    int katanaCombo = 0;
+    Coroutine _attackComboTimerCoroutine;
     List<int> h_attackAnimationList = new List<int>(new int[]
     {   Animator.StringToHash("LightAttk1"),
         Animator.StringToHash("LightAttk2"),
@@ -37,10 +42,9 @@ public class PlayerStateMachine : MonoBehaviour
     List<GameObject> animationSlash = new List<GameObject>();
     [SerializeField]
     List<Material> katanaDissolve = new List<Material>();
-    [SerializeField] List<SOOneShot> _attacksAudio;
-
 
     [SerializeField] bool canApplyGravity = true;
+    bool isBeingDamaged = false;
     bool isJumpPressed = false;
     bool isDashPressed = false;
     bool canJump = true;
@@ -99,11 +103,18 @@ public class PlayerStateMachine : MonoBehaviour
     public GameObject KatanaSlash { get => katanaSlash; }
 
     public AudioSource PlayerAudio { get => playerAudio; }
-    public List<SOOneShot> AttacksAudio { get => _attacksAudio; }
     public List<Material> KatanaDissolve { get => katanaDissolve; set => katanaDissolve = value; }
+
+    public PlayerStateMachine Instance { get => instance; }
+    public int IsDamagedHash { get => isDamagedHash; set => isDamagedHash = value; }
+    public bool IsBeingDamaged { get => isBeingDamaged; set => isBeingDamaged = value; }
+    public float DamageDuration { get => _damageDuration; set => _damageDuration = value; }
+    public int KatanaComboHash { get => katanaComboHash; set => katanaComboHash = value; }
+    public int KatanaCombo { get => katanaCombo; set => katanaCombo = value; }
 
     void Awake()
     {
+        instance = this;
         playerAnimator = GetComponent<Animator>();
         playerTransform = GetComponent<Transform>();
         playerInput = new PlayerInput();
@@ -116,7 +127,7 @@ public class PlayerStateMachine : MonoBehaviour
         _currentState = _states.Grounded();
         _currentState.EnterState();
 
-        playerInput.Controller.Jump.started += onJump;
+        playerInput.Controller.Jump.performed += onJump;
         playerInput.Controller.Jump.canceled += onJump;
 
         playerInput.Controller.Move.started += onMove;
@@ -165,7 +176,10 @@ public class PlayerStateMachine : MonoBehaviour
     {
         if (_audioStats.canPerformAction)
         {
-            foreach(OneShotOnBeat el in _audioStats.roomAudio.attackList)
+            ShowKatana();// show katana
+            if (_attackComboTimerCoroutine != null) StopCoroutine(_attackComboTimerCoroutine);
+            _attackComboTimerCoroutine = StartCoroutine(attackComboTimer()); // dissolve after 3 secs
+            foreach (OneShotOnBeat el in _audioStats.roomAudio.attackList)
             {
                 if(_audioStats.CurrentPlayableBeat == el.ForBeat)
                 {
@@ -175,6 +189,14 @@ public class PlayerStateMachine : MonoBehaviour
             }
             _isAttackingPressed = ctx.ReadValueAsButton();
         }
+    }
+    IEnumerator attackComboTimer()
+    {
+        yield return new WaitForSeconds(_audioStats.BeatsToSeconds(3.0f));
+        HitCounter = 0;
+        DissolveKatana();
+        playerAnimator.SetInteger(H_hitCount, HitCounter);
+        _attackComboTimerCoroutine = null;
     }
     public bool isPlayerGrounded()
     {
@@ -210,11 +232,15 @@ public class PlayerStateMachine : MonoBehaviour
 
     public void StartTimedFunction(float time)
     {
+        timedFunctionFinished = false;
         StartCoroutine(TimedFunction(time));
+    }
+    public void StopTimedFunction()
+    {
+        StopCoroutine(TimedFunction(1));
     }
     private IEnumerator TimedFunction(float time)
     {
-        timedFunctionFinished = false;
         yield return new WaitForSeconds(time);
         timedFunctionFinished = true;
     }
@@ -239,4 +265,26 @@ public class PlayerStateMachine : MonoBehaviour
             cachedMovementVector = movementVector;
         }
     }
+    void ShowKatana()
+    {
+        if (KatanaDissolve[0].GetFloat("_dissolve") == 1)
+        {
+            DOTween.To(x => KatanaDissolve[0].SetFloat("_dissolve", x), 1, 0, 0.4f);
+            DOTween.To(x => KatanaDissolve[1].SetFloat("_dissolve", x), 1, 0, 0.4f);
+            DOTween.To(x => KatanaDissolve[2].SetFloat("_dissolve", x), 1, 0, 0.4f);
+            DOTween.To(x => KatanaDissolve[3].SetFloat("_dissolve", x), 1, 0, 0.4f);
+        }
+    }
+    void DissolveKatana()
+    {
+        DOTween.To(x => KatanaDissolve[0].SetFloat("_dissolve", x), 0, 1, 0.5f);
+        DOTween.To(x => KatanaDissolve[1].SetFloat("_dissolve", x), 0, 1, 0.5f);
+        DOTween.To(x => KatanaDissolve[2].SetFloat("_dissolve", x), 0, 1, 0.5f);
+        DOTween.To(x => KatanaDissolve[3].SetFloat("_dissolve", x), 0, 1, 0.5f);
+    }
+
+    //public void ApplyDamage(int damage)
+    //{
+    //    playerAnimator.SetInteger(isDamagedHash, 1);
+    //}
 }
