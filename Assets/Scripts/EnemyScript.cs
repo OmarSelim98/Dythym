@@ -65,7 +65,8 @@ public class EnemyScript : MonoBehaviour
                 lookAtPlayer();
                 if (distanceToPlayer() >= 1.5f)
                 {
-                    followPlayerOnBeat();
+                    //followPlayerOnBeat();
+                    followPlayer();
                 }
                 else
                 {
@@ -302,8 +303,22 @@ public class EnemyScript : MonoBehaviour
     //IEnumerator startAttackAnimation()
     //{
     //    yield return new WaitForSeconds(0.25f);
-        
+
     //}
+    void followPlayer()
+    {
+        if (!inState)
+        {
+            animator.SetBool(isLandingHash, false);
+            animator.SetBool(isMovingHash, true);
+            agent.destination = player.transform.position;
+            if (agent.isStopped)
+            {
+                agent.isStopped = false;
+            }
+        }
+    }
+
     void followPlayerOnBeat()
     {
         if (!inState)

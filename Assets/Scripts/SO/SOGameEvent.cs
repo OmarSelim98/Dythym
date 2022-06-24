@@ -7,11 +7,14 @@ public class SOGameEvent : ScriptableObject
 {
     List<GameEventListener> listeners = new List<GameEventListener>();
 
-    public void Raise() { 
-    
-        for(int i= listeners.Count-1 ;i >= 0; i++)
+    public void Raise() {
+        if (listeners.Count > 0)
         {
-            listeners[i].OnEventRaised();
+            for (int i = listeners.Count - 1; i >= 0; i++)
+            {
+                Debug.Log(i);
+                listeners[i].OnEventRaised();
+            }
         }
     }
 

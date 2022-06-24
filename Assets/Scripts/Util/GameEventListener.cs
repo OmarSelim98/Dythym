@@ -15,7 +15,7 @@ public class GameEventListener : MonoBehaviour
 
     private void OnDisable()
     {
-        Event.UnregisterListener(this);
+        Event.UnregisterListener((GameEventListener)this);
     }
 
     public void OnEventRaised()

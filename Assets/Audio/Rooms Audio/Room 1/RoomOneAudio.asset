@@ -22,7 +22,7 @@ MonoBehaviour:
   - 2
   - 3
   LengthInBeats: 4
-  ErrorMargin: 0.25
+  ErrorMargin: 0.4
   dashList:
   - oneShot: {fileID: 11400000, guid: de34d67238dc34c408bdbd2523977008, type: 2}
     forBeat: 0

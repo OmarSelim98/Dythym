@@ -50,6 +50,8 @@ public class PlayerStateMachine : MonoBehaviour
     bool canJump = true;
     bool isMovementPressed = false;
     bool timedFunctionFinished = false;
+    bool overloaded = false; // a bool indicates that the player can't attack for a certain time.
+    [SerializeField] float overloadedTime = 1.0f;
     Vector2 movementVector = Vector2.right;
     Vector2 cachedMovementVector; // used for dashing direction
 
@@ -111,6 +113,8 @@ public class PlayerStateMachine : MonoBehaviour
     public float DamageDuration { get => _damageDuration; set => _damageDuration = value; }
     public int KatanaComboHash { get => katanaComboHash; set => katanaComboHash = value; }
     public int KatanaCombo { get => katanaCombo; set => katanaCombo = value; }
+    public bool Overloaded { get => overloaded; set => overloaded = value; }
+    public float OverloadedTime { get => overloadedTime; set => overloadedTime = value; }
 
     void Awake()
     {
@@ -174,7 +178,7 @@ public class PlayerStateMachine : MonoBehaviour
     }
     void onAttack(InputAction.CallbackContext ctx)
     {
-        if (_audioStats.canPerformAction)
+        if (_audioStats.canPerformAction && !overloaded)
         {
             ShowKatana();// show katana
             if (_attackComboTimerCoroutine != null) StopCoroutine(_attackComboTimerCoroutine);

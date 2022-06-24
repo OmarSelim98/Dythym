@@ -18,6 +18,8 @@ public class PlayerAttackingState : PlayerAbstractState
         // clamp the hit counter
         _ctx.HitCounter = Mathf.Clamp(_ctx.HitCounter, 0, 2);
         Debug.Log("Hits = " + _ctx.HitCounter);
+
+        _ctx.AnimationSlash[_ctx.HitCounter].SetActive(true);
         _ctx.PlayerAnimator.SetTrigger(_ctx.H_attack); // trigger the attack
         _ctx.PlayerAnimator.SetInteger(_ctx.H_hitCount, _ctx.HitCounter); // add the hit 
         //start the animtion and set an end to it
@@ -35,6 +37,10 @@ public class PlayerAttackingState : PlayerAbstractState
         {
             _ctx.HitCounter = 0;
         }
+        //else if(_ctx.HitCounter == 2) {
+        //    _ctx.Overloaded = true;
+        //    _ctx.StartCoroutine(EndPlayerOverloaded());
+        //}
     }
     public override void CheckSwitchStates()
     {
@@ -53,8 +59,14 @@ public class PlayerAttackingState : PlayerAbstractState
     IEnumerator EndAttackAnimation()
     {
         yield return new WaitForSeconds(0.6f);
+        _ctx.AnimationSlash[_ctx.HitCounter].SetActive(false);
         if (_ctx.IsAttackingPressed)
         {
+            if (_ctx.HitCounter == 2)
+            {
+                _ctx.Overloaded = true;
+                _ctx.StartCoroutine(EndPlayerOverloaded());
+            }
             _ctx.PlayerAnimator.SetBool("canCombo", true);
             Debug.Log("Attacking Again");
             SwitchState(_factory.Attacking());
@@ -65,5 +77,11 @@ public class PlayerAttackingState : PlayerAbstractState
             Debug.Log("Exiting combo bye");
             SwitchState(_factory.Idle());
         }
+    }
+
+    IEnumerator EndPlayerOverloaded()
+    {
+        yield return new WaitForSeconds(_ctx.OverloadedTime);
+        _ctx.Overloaded = false;
     }
 }

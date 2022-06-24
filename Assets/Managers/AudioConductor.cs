@@ -1,10 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class AudioConductor : MonoBehaviour
 {
     [SerializeField] SOAudioStats _generalStats;
+    [SerializeField] SOGameEvent OnAudioStarted;
+    float waitFor = 2.0f;
     AudioSource _musicSource;
     // Start is called before the first frame update
     void Awake()
@@ -14,7 +17,11 @@ public class AudioConductor : MonoBehaviour
         _generalStats.CalculateSecPerBeat();
         _generalStats.RecordDspTime();
         _musicSource.clip = _generalStats.roomAudio.Initial.file;
-        _musicSource.Play();
+        
+    }
+    void Start()
+    {
+        StartCoroutine(StartAudio());
     }
     // Update is called once per frame
     void Update()
@@ -24,5 +31,12 @@ public class AudioConductor : MonoBehaviour
         _generalStats.UpdateLoopPosition();
         _generalStats.UpdateAnaglogLoopPosition();
         _generalStats.UpdateCanPerformAction();
+    }
+
+    IEnumerator StartAudio()
+    {
+        yield return new WaitForSeconds(waitFor);
+        _musicSource.Play();
+        OnAudioStarted.Raise();
     }
 }

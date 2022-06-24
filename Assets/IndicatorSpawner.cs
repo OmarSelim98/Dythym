@@ -10,6 +10,7 @@ public class IndicatorSpawner : MonoBehaviour
     private bool spawnIndicator;
     private bool _prevState = false;
     private int _counter = 0;
+    private bool isSongPlaying = false;
     [SerializeField] float beforeBeatBy = 1.5f;
     [SerializeField] public RawImage _indicatorPrefab;
     [SerializeField] SOAudioStats _audioStats;
@@ -21,40 +22,35 @@ public class IndicatorSpawner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        spawnIndicator = _audioStats.beforePlayableBeatBy(beforeBeatBy);
-        if (spawnIndicator != _prevState)
+        if (isSongPlaying)
         {
-            Debug.Log(_counter + ", Spawn Indicator: " + spawnIndicator + ", Prev: " + _prevState);
-            //Debug.Log(_audioStats.LoopPositionInBeats);
-            if (_prevState)
+            spawnIndicator = _audioStats.beforePlayableBeatBy(beforeBeatBy);
+            if (spawnIndicator != _prevState)
             {
+                Debug.Log(_counter + ", Spawn Indicator: " + spawnIndicator + ", Prev: " + _prevState);
+                //Debug.Log(_audioStats.LoopPositionInBeats);
+                if (_prevState)
+                {
 
-                GameObject left = Instantiate(_indicatorPrefab, this.gameObject.transform).gameObject;
-                GameObject right = Instantiate(_indicatorPrefab, this.gameObject.transform).gameObject;
-                if (left != null)
-                {
-                    left.SendMessage("MoveLeft");
+                    GameObject left = Instantiate(_indicatorPrefab, this.gameObject.transform).gameObject;
+                    GameObject right = Instantiate(_indicatorPrefab, this.gameObject.transform).gameObject;
+                    if (left != null)
+                    {
+                        left.SendMessage("MoveLeft");
+                    }
+                    if (right != null)
+                    {
+                        right.SendMessage("MoveRight");
+                    }
                 }
-                if (right != null)
-                {
-                    right.SendMessage("MoveRight");
-                }
+                _prevState = spawnIndicator;
+                _counter++;
             }
-            _prevState = spawnIndicator;
-            _counter++;
         }
-        //if (_audioStats.onBeat())
-        //{
-        //    
-        //}
-        //if (_audioStats.canPerformAction != _prevCanPerformAction)
-        //{
-        //    //if(_audioStats.canPerformAction == true)
-        //    //{
-
-        //    //}
-
-        //    _prevCanPerformAction = _audioStats.canPerformAction;
-        //}
+    }
+    public void OnSongStartPlaying()
+    {
+        isSongPlaying = true;
+        Debug.Log("Started");
     }
 }
